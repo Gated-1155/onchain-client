@@ -1,11 +1,12 @@
 import { useAccount, useReadContracts } from "wagmi";
 import { badgeTokenAbi, badgeTokenAddress } from "../contracts/badgeToken";
-import { useBadgeTypeIds } from "../hooks/useBadgeTypeIds";
+import { useBadgeTypeIds, useGlobalTransferable } from "../hooks/useBadgeTypeIds";
 import { useBadgeMetadataList } from "../hooks/useBadgeMetadata";
 
 export function BadgeList() {
   const { address, isConnected } = useAccount();
   const { data: badgeTypes, isLoading, error } = useBadgeTypeIds();
+  const { data: transferable } = useGlobalTransferable();
   const metadataResults = useBadgeMetadataList(badgeTypes);
 
   const { data: balances } = useReadContracts({
@@ -55,6 +56,12 @@ export function BadgeList() {
             <span className="stat-value">{heldCount}</span>
           </div>
         )}
+        <div className="stat-block">
+          <span className="stat-label">전송 가능 여부 (전체)</span>
+          <span className={transferable ? "transferable-yes" : "transferable-no"}>
+            {transferable === undefined ? "확인 중..." : transferable ? "가능" : "불가"}
+          </span>
+        </div>
       </div>
 
       <div className="table-wrap">
@@ -64,7 +71,6 @@ export function BadgeList() {
               <th>id</th>
               <th>이미지</th>
               <th>배지</th>
-              <th>전송 가능?</th>
               {isConnected && <th>내 보유량</th>}
             </tr>
           </thead>
@@ -90,11 +96,6 @@ export function BadgeList() {
                     <a className="uri-cell" href={b.uri} target="_blank" rel="noreferrer">
                       메타데이터 보기 ↗
                     </a>
-                  </td>
-                  <td>
-                    <span className={b.transferable ? "transferable-yes" : "transferable-no"}>
-                      {b.transferable ? "가능" : "불가"}
-                    </span>
                   </td>
                   {isConnected && <td className="balance-cell">{balance?.toString() ?? "-"}</td>}
                 </tr>

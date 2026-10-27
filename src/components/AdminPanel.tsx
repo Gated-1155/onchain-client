@@ -2,6 +2,7 @@ import { useState, type ReactElement } from "react";
 import { useReadContract } from "wagmi";
 import { badgeTokenAbi, badgeTokenAddress } from "../contracts/badgeToken";
 import { useAdminAccess } from "../hooks/useAdminAccess";
+import { useGlobalTransferable } from "../hooks/useBadgeTypeIds";
 import { useMetadataPreview } from "../hooks/useMetadataPreview";
 import { useRefetchOnConfirm } from "../hooks/useRefetchOnConfirm";
 import { useTxStatus } from "../hooks/useTxStatus";
@@ -40,7 +41,6 @@ export function AdminPanel() {
 
 function CreateBadgeTypeForm() {
   const [uri, setUri] = useState("");
-  const [transferable, setTransferable] = useState(false);
   const { write, hash, status } = useTxStatus();
   useRefetchOnConfirm(status.phase);
 
@@ -57,7 +57,7 @@ function CreateBadgeTypeForm() {
           address: badgeTokenAddress,
           abi: badgeTokenAbi,
           functionName: "createBadgeType",
-          args: [uri, transferable],
+          args: [uri],
           ...GAS_FEES,
         });
       }}
@@ -88,10 +88,10 @@ function CreateBadgeTypeForm() {
         </div>
       )}
 
-      <label className="field checkbox-field">
-        <input type="checkbox" checked={transferable} onChange={(e) => setTransferable(e.target.checked)} />
-        전송 가능(transferable)
-      </label>
+      <p className="hint-text">
+        전송 가능 여부는 이 배지 타입 개별 설정이 아니라, 컨트랙트 전체에 걸린 단일 스위치입니다 — 아래 "전송 가능 여부
+        토글"에서 한 번에 켜고 끕니다.
+      </p>
       <div>
         <button type="submit" className="btn btn-primary" disabled={!canSubmit}>
           {status.phase === "pending" && <ButtonSpinner />}
@@ -142,74 +142,66 @@ function UnusedMetadataChecklist() {
 }
 
 function TransferableToggleForm() {
-  const [id, setId] = useState("");
-  const [transferable, setTransferable] = useState(false);
   const { write, hash, status } = useTxStatus();
   useRefetchOnConfirm(status.phase);
 
-  const idBigInt = id ? BigInt(id) : undefined;
-  const {
-    data: currentState,
-    error: readError,
-    isFetching: isReadingState,
-  } = useReadContract({
-    address: badgeTokenAddress,
-    abi: badgeTokenAbi,
-    functionName: "isTransferable",
-    args: idBigInt !== undefined ? [idBigInt] : undefined,
-    query: { enabled: idBigInt !== undefined },
-  });
+  const { data: currentState, isFetching: isReadingState } = useGlobalTransferable();
 
   return (
-    <form
-      className="form"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (idBigInt === undefined) return;
-        write({
-          address: badgeTokenAddress,
-          abi: badgeTokenAbi,
-          functionName: "setTransferable",
-          args: [idBigInt, transferable],
-          ...GAS_FEES,
-        });
-      }}
-    >
+    <div className="form">
       <h3 className="form-title">전송 가능 여부 토글 (admin)</h3>
-      <label className="field">
-        배지 id
-        <input value={id} onChange={(e) => setId(e.target.value)} type="number" min="1" step="1" required />
-      </label>
-      {idBigInt !== undefined && (
-        <p className="hint-text">
-          현재 상태:{" "}
-          {readError ? (
-            <span className="error-text">등록되지 않은 id입니다.</span>
-          ) : isReadingState ? (
-            "확인 중..."
-          ) : (
-            <span className={currentState ? "transferable-yes" : "transferable-no"}>
-              {currentState ? "가능" : "불가"}
-            </span>
-          )}
-        </p>
-      )}
-      <label className="field checkbox-field">
-        <input type="checkbox" checked={transferable} onChange={(e) => setTransferable(e.target.checked)} />
-        전송 가능으로 설정
-      </label>
-      <div>
+      <p className="hint-text">
+        배지 타입별 설정이 아니라, 컨트랙트 전체에 걸린 단일 스위치입니다 — 켜면 등록된 모든 배지가 한 번에 전송
+        가능해지고, 끄면 전부 한 번에 막힙니다.
+      </p>
+      <p className="hint-text">
+        현재 상태:{" "}
+        {isReadingState ? (
+          "확인 중..."
+        ) : (
+          <span className={currentState ? "transferable-yes" : "transferable-no"}>
+            {currentState ? "가능" : "불가"}
+          </span>
+        )}
+      </p>
+      <div className="field-row">
         <button
-          type="submit"
+          type="button"
           className="btn btn-primary"
-          disabled={idBigInt === undefined || status.phase === "pending"}
+          disabled={currentState !== false || status.phase === "pending"}
+          onClick={() =>
+            write({
+              address: badgeTokenAddress,
+              abi: badgeTokenAbi,
+              functionName: "setTransferable",
+              args: [true],
+              ...GAS_FEES,
+            })
+          }
         >
           {status.phase === "pending" && <ButtonSpinner />}
-          적용
+          전체 전송 가능으로 전환
+        </button>
+        <button
+          type="button"
+          className="btn"
+          disabled={currentState !== true || status.phase === "pending"}
+          onClick={() =>
+            write({
+              address: badgeTokenAddress,
+              abi: badgeTokenAbi,
+              functionName: "setTransferable",
+              args: [false],
+              ...GAS_FEES,
+            })
+          }
+        >
+          {status.phase === "pending" && <ButtonSpinner />}
+          전체 전송 불가로 전환
         </button>
       </div>
       <TxStatusBanner status={status} hash={hash} />
-    </form>
+    </div>
   );
 }
 

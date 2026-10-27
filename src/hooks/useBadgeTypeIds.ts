@@ -1,11 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
-import { usePublicClient } from "wagmi";
+import { usePublicClient, useReadContract } from "wagmi";
 import { badgeTokenAbi, badgeTokenAddress } from "../contracts/badgeToken";
+
+// transferable is a single contract-wide switch (see BadgeToken.sol), not a
+// per-badge-type flag - one read covers every badge id at once.
+export function useGlobalTransferable() {
+  return useReadContract({
+    address: badgeTokenAddress,
+    abi: badgeTokenAbi,
+    functionName: "transferable",
+  });
+}
 
 export interface BadgeTypeInfo {
   id: bigint;
   uri: string;
-  transferable: boolean;
 }
 
 const BATCH_SIZE = 10n;
@@ -34,42 +43,26 @@ export function useBadgeTypeIds() {
       while (found.length < SAFETY_CAP) {
         const idsToTry = Array.from({ length: Number(BATCH_SIZE) }, (_, i) => nextId + BigInt(i));
 
-        const [uriResults, transferableResults] = await Promise.all([
-          client.multicall({
-            contracts: idsToTry.map(
-              (id) =>
-                ({
-                  address: badgeTokenAddress,
-                  abi: badgeTokenAbi,
-                  functionName: "uri",
-                  args: [id],
-                }) as const,
-            ),
-            allowFailure: true,
-          }),
-          client.multicall({
-            contracts: idsToTry.map(
-              (id) =>
-                ({
-                  address: badgeTokenAddress,
-                  abi: badgeTokenAbi,
-                  functionName: "isTransferable",
-                  args: [id],
-                }) as const,
-            ),
-            allowFailure: true,
-          }),
-        ]);
+        const uriResults = await client.multicall({
+          contracts: idsToTry.map(
+            (id) =>
+              ({
+                address: badgeTokenAddress,
+                abi: badgeTokenAbi,
+                functionName: "uri",
+                args: [id],
+              }) as const,
+          ),
+          allowFailure: true,
+        });
 
         let hitEnd = false;
         for (let i = 0; i < idsToTry.length; i++) {
           const uriResult = uriResults[i];
-          const transferableResult = transferableResults[i];
-          if (uriResult.status === "success" && transferableResult.status === "success") {
+          if (uriResult.status === "success") {
             found.push({
               id: idsToTry[i],
               uri: uriResult.result as string,
-              transferable: transferableResult.result as boolean,
             });
           } else {
             hitEnd = true;

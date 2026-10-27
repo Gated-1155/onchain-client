@@ -4,8 +4,8 @@ import { fetchMetadata } from "./useBadgeMetadata";
 
 // Badge metadata now lives in onchain-contract's own repo (not metadata-test,
 // which was erc-1155's source - see the "which repo is canonical" decision).
-const REPO_API_URL = "https://api.github.com/repos/onchain-toy/onchain-contract/contents/metadata";
-const REPO_RAW_BASE = "https://raw.githubusercontent.com/onchain-toy/onchain-contract/main/metadata";
+const REPO_API_URL = "https://api.github.com/repos/Gated-1155/onchain-contract/contents/metadata";
+const REPO_RAW_BASE = "https://raw.githubusercontent.com/Gated-1155/onchain-contract/main/metadata";
 
 interface RepoFile {
   name: string;

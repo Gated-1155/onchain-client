@@ -1,7 +1,8 @@
 // Deployed to Polygon Amoy (onchain-contract, ethers/mocha project - see ../onchain-contract).
-// Verified on Polygonscan (Sourcify cross-match). ABI regenerated from onchain-contract's
-// compiled artifact (contracts/BadgeToken.sol), includes the InvalidUri validation added there.
-export const badgeTokenAddress = "0xc85B40C6bD74EA71d3f08dBa316539D36DCedbCC" as const
+// Verified on Sourcify. ABI regenerated from onchain-contract's compiled artifact
+// (contracts/BadgeToken.sol) - transferable is now a single contract-wide switch
+// (createBadgeType/setTransferable no longer take a per-id transferable flag).
+export const badgeTokenAddress = "0x4a69e03529aDDC8bEfB827F27cbADd6beF645Cf2" as const
 
 export const badgeTokenAbi = [
   {
@@ -226,34 +227,9 @@ export const badgeTokenAbi = [
       },
       {
         "indexed": false,
-        "internalType": "bool",
-        "name": "transferable",
-        "type": "bool"
-      }
-    ],
-    "name": "BadgeTransferabilityUpdated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "id",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
         "internalType": "string",
         "name": "uri",
         "type": "string"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "transferable",
-        "type": "bool"
       }
     ],
     "name": "BadgeTypeCreated",
@@ -419,6 +395,19 @@ export const badgeTokenAbi = [
       }
     ],
     "name": "TransferSingle",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "transferable",
+        "type": "bool"
+      }
+    ],
+    "name": "TransferabilityUpdated",
     "type": "event"
   },
   {
@@ -592,11 +581,6 @@ export const badgeTokenAbi = [
         "internalType": "string",
         "name": "uri_",
         "type": "string"
-      },
-      {
-        "internalType": "bool",
-        "name": "transferable_",
-        "type": "bool"
       }
     ],
     "name": "createBadgeType",
@@ -698,27 +682,8 @@ export const badgeTokenAbi = [
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "id",
-        "type": "uint256"
-      }
-    ],
-    "name": "isTransferable",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
-        "name": "account",
+        "name": "to",
         "type": "address"
       },
       {
@@ -913,11 +878,6 @@ export const badgeTokenAbi = [
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "id",
-        "type": "uint256"
-      },
-      {
         "internalType": "bool",
         "name": "transferable_",
         "type": "bool"
@@ -937,6 +897,19 @@ export const badgeTokenAbi = [
       }
     ],
     "name": "supportsInterface",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "transferable",
     "outputs": [
       {
         "internalType": "bool",
